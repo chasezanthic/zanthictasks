@@ -1,0 +1,8 @@
+[
+  { "username": "Darren", "password": "zanthic1", "isAdmin": true },
+  { "username": "Chris", "password": "zanthic1", "isAdmin": false },
+  { "username": "Kole", "password": "zanthic1", "isAdmin": false },
+  { "username": "Radek", "password": "zanthic1", "isAdmin": false },
+  { "username": "Holly", "password": "zanthic1", "isAdmin": false },
+  { "username": "Chase", "password": "zanthic1", "isAdmin": false }
+]
