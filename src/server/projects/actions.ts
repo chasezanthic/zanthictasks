@@ -9,7 +9,7 @@ import {
 import HttpError from "@wasp/core/HttpError.js";
 import { Project, ProjectGroup } from "@wasp/entities";
 
-type CreateProjectArgs = Pick<Project, "companyId" | "title">;
+type CreateProjectArgs = Pick<Project, "companyId" | "name">;
 
 export const createProject: CreateProject<CreateProjectArgs, Project> = (
   args,
@@ -19,18 +19,20 @@ export const createProject: CreateProject<CreateProjectArgs, Project> = (
     throw new HttpError(401);
   }
 
+  console.log(args);
+
   return context.entities.Project.create({
     data: {
-      title: args.title,
+      name: args.name,
       company: { connect: { id: args.companyId!! } },
     },
   });
 };
 
-type UpdateProjectArgs = Pick<Project, "title" | "companyId" | "id">;
+type UpdateProjectArgs = Pick<Project, "name" | "companyId" | "id">;
 
 export const updateProject: UpdateProject<UpdateProjectArgs, Project> = (
-  { title, companyId, id },
+  { name, companyId, id },
   context
 ) => {
   if (!context.user) {
@@ -41,11 +43,11 @@ export const updateProject: UpdateProject<UpdateProjectArgs, Project> = (
     where: {
       id,
     },
-    data: { title, company: { connect: { id: companyId!! } } },
+    data: { name, company: { connect: { id: companyId!! } } },
   });
 };
 
-type DeleteProjectArgs = Pick<Project, "title" | "companyId" | "id">;
+type DeleteProjectArgs = Pick<Project, "name" | "companyId" | "id">;
 
 export const deleteProject: DeleteProject<DeleteProjectArgs, Project> = (
   { id },

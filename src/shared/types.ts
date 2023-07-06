@@ -1,5 +1,5 @@
 export type FilterSet = {
-  companyIds: number[];
-  userIds: number[];
+  companyIds: string[];
+  userIds: string[];
   status: number[];
 };

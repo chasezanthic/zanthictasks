@@ -3,6 +3,7 @@ import {
   CreateTask,
   DeleteTask,
   UpdateTask,
+  UpdateAssignees,
 } from "@wasp/actions/types";
 import HttpError from "@wasp/core/HttpError.js";
 import { Task, TaskAssignment } from "@wasp/entities";
@@ -19,7 +20,7 @@ export const createTask: CreateTask<CreateTaskArgs, Task> = async (
 
   return context.entities.Task.create({
     data: {
-      project: { connect: { id: projectId } },
+      project: { connect: { id: projectId ?? undefined } },
       description,
       status: 0,
     },
@@ -74,7 +75,11 @@ export const updateTask: UpdateTask<UpdateTaskArgs, Task> = (
     where: {
       id,
     },
-    data: { status, description, project: { connect: { id: projectId } } },
+    data: {
+      status,
+      description,
+      project: { connect: { id: projectId ?? undefined } },
+    },
   });
 };
 
@@ -89,4 +94,32 @@ export const deleteTask: DeleteTask<DeleteTaskArgs, void> = async (
   }
 
   await context.entities.Task.delete({ where: { id } });
+};
+
+type UpdateAssigneesArgs = {
+  taskId: string;
+  addedAssigneeIds: string[];
+  deletedAssigneeIds: string[];
+};
+
+export const updateAssignees: UpdateAssignees<
+  UpdateAssigneesArgs,
+  void
+> = async ({ taskId, addedAssigneeIds, deletedAssigneeIds }, context) => {
+  if (deletedAssigneeIds.length > 0) {
+    await context.entities.TaskAssignment.deleteMany({
+      where: {
+        AND: [{ taskId: taskId }, { userId: { in: deletedAssigneeIds } }],
+      },
+    });
+  }
+
+  for (const id of addedAssigneeIds) {
+    await context.entities.TaskAssignment.create({
+      data: {
+        userId: id,
+        taskId: taskId,
+      },
+    });
+  }
 };

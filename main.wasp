@@ -22,7 +22,13 @@ app ZanthicTasks {
     ("load-json-file", "7.0.1"),
     ("react-icons", "^4.9.0"),
     ("multer", "^1.4.5-lts.1"),
-    ("@types/multer", "^1.4.7")
+    ("@types/multer", "^1.4.7"),
+    ("daisyui", "^3.1.7"),
+    ("zustand", "^4.3.8"),
+    ("@headlessui/react", "^1.7.15"),
+    ("@mui/material", "^5.13.7"),
+    ("@emotion/react", "^11.11.1"),
+    ("@emotion/styled", "^11.11.0")
   ]
 }
 
@@ -30,7 +36,7 @@ app ZanthicTasks {
 // Run `wasp db migrate-dev` in the CLI to create the database tables
 // Then run `wasp db studio` to open Prisma Studio and view your db models
 entity User {=psl
-  id          Int     @id @default(autoincrement())
+  id          String    @id @default(uuid())
   username    String  @unique
   password    String
   isAdmin     Boolean @default(false)
@@ -38,60 +44,58 @@ entity User {=psl
 psl=}
 
 entity Company {=psl
-  id    Int    @id @default(autoincrement())
+  id    String    @id @default(uuid())
   name  String
   projects Project[]
   groups ProjectGroup[]
+  createdAt DateTime @default(now())
 psl=}
 
 entity Project {=psl
-  id        Int      @id @default(autoincrement())
-  title     String
+  id    String    @id @default(uuid())
+  name     String
   tasks     Task[]
-  company   Company  @relation(fields: [companyId], references: [id])
-  companyId Int
-  groupId  Int?
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String
+  groupId  String?
   group  ProjectGroup?   @relation(fields: [groupId], references: [id])
+  createdAt DateTime @default(now())
 psl=}
 
 entity ProjectGroup {=psl
-  id        Int      @id @default(autoincrement())
+  id    String    @id @default(uuid())
   name      String
   projects  Project[]
-  companyId Int
-  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 psl=}
 
 entity Task {=psl
-  id          Int     @id @default(autoincrement())
+  id    String    @id @default(uuid())
   description String
   comments    String?
   status      Int // 0 = incomplete, 1 = inactive, 2 = complete, 3 = archived
   assigned    TaskAssignment[]
-  projectId  Int?
+  projectId  String?
   project    Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 psl=}
 
 
 entity TaskAssignment {=psl
-  taskId Int
-  task   Task @relation(fields: [taskId], references: [id])
+  taskId String
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([taskId, userId])
 psl=}
 
 route RootRoute { path: "/", to: MainPage }
-route FileRoute { path: "/file", to: FileTest }
 page MainPage {
   authRequired: true,
   component: import { MainPage } from "@client/MainPage.tsx"
-}
-page FileTest {
-  authRequired: true,
-  component: import { FileTest } from "@client/FileTest.tsx"
 }
 
 route LoginRoute { path: "/login", to: LoginPage }
@@ -111,6 +115,11 @@ query getCompanyIds {
 
 query getUserIds {
   fn: import { getUserIds } from "@server/queries.js",
+  entities: [User]
+}
+
+query getAssigneeNames {
+  fn: import { getAssigneeNames } from "@server/queries.js",
   entities: [User]
 }
 
@@ -142,6 +151,11 @@ action updateTask {
 action deleteTask {
   fn: import { deleteTask } from "@server/tasks/actions.js",
   entities: [Task]
+}
+
+action updateAssignees {
+  fn: import {updateAssignees} from "@server/tasks/actions.js",
+  entities: [TaskAssignment, User, Task]
 }
 
 action createProject {
@@ -198,10 +212,4 @@ action createUser {
 action updatePassword {
   fn: import {updatePassword} from "@server/users/actions.js",
   entities: [User]
-}
-
-api fileTest {
-  fn: import {fileTest} from "@server/apis.js",
-  middlewareConfigFn: import { fileTestMiddleWare } from "@server/apis.js",
-  httpRoute: (POST, "/api/file")
 }

@@ -656,7 +656,7 @@ export const seedCompanies: DbSeedFn = async (prismaClient) => {
     for (const project of company.subLists) {
       const proj = await prismaClient.project.create({
         data: {
-          title: project.listName,
+          name: project.listName,
           company: { connect: { id: _company?.id } },
         },
       });
