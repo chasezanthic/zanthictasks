@@ -113,6 +113,11 @@ query getCompanyIds {
   entities: [Company]
 }
 
+query getProjectIds {
+  fn: import { getProjectIds } from "@server/queries.js",
+  entities: [Project]
+}
+
 query getUserIds {
   fn: import { getUserIds } from "@server/queries.js",
   entities: [User]

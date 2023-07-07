@@ -142,7 +142,7 @@ export const HeaderList = <
   };
 
   return (
-    <div>
+    <div className="flex" key={data.id}>
       <dialog className="modal" ref={deleteModalRef as any}>
         <form method="dialog" className="modal-box">
           <h3 className="font-bold text-lg">Deleting {data?.name}</h3>
@@ -169,10 +169,10 @@ export const HeaderList = <
       {headerType == "project" && (
         <NewTaskModal projectId={data.id} modalRef={newTaskModalRef} />
       )}
-      <div className="collapse collapse-arrow transition-all rounded-none">
+      <div className="collapse transition-all rounded-none">
         <input type="checkbox" ref={collapseRef as any} />
         <div
-          className="flex items-center justify-start gap-2 border-b-2 rounded-none collapse-title mx-0 text-xl font-medium hover:bg-slate-100 z-10"
+          className="pr-14 flex items-center justify-between gap-2 border-b-2 rounded-none collapse-title mx-0 text-xl font-medium hover:bg-slate-100 z-10"
           onMouseEnter={() => setHovering(true)}
           onMouseLeave={() => setHovering(false)}
           onClick={toggleCollapse}
@@ -184,7 +184,7 @@ export const HeaderList = <
             onSave={onSave}
             onCancel={onCancel}
             setText={setName}
-            text={name}
+            text={data.name == "noproj" ? "Misc" : name}
           />
           {hovering && (
             <HeaderActions

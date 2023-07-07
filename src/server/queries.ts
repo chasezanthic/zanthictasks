@@ -5,6 +5,7 @@ import type {
   GetUserIds,
   GetAllTasks,
   GetAssigneeNames,
+  GetProjectIds,
 } from "@wasp/queries/types";
 import type { FilterSet } from "../shared/types";
 import { User } from "@wasp/entities";
@@ -42,7 +43,7 @@ export const getFilteredTasks = (async (filters: FilterSet, context) => {
     throw new HttpError(401);
   }
 
-  return context.entities.Company.findMany({
+  const companies = await context.entities.Company.findMany({
     where: {
       id: {
         in: filters.companyIds,
@@ -64,13 +65,11 @@ export const getFilteredTasks = (async (filters: FilterSet, context) => {
         },
       },
     },
+
     include: {
       projects: {
         include: {
           tasks: {
-            where: {
-              AND: [{ NOT: { status: 0 } }, { status: { in: filters.status } }],
-            },
             include: {
               assigned: {
                 include: {
@@ -88,6 +87,11 @@ export const getFilteredTasks = (async (filters: FilterSet, context) => {
       },
     },
   });
+
+  console.log(filters);
+  console.log(companies);
+
+  return companies;
 }) satisfies GetFilteredTasks;
 
 export const getCompanyIds = (async (args, context) => {
@@ -102,6 +106,19 @@ export const getCompanyIds = (async (args, context) => {
     },
   });
 }) satisfies GetCompanyIds;
+
+export const getProjectIds = (async (args, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  return context.entities.Project.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+}) satisfies GetProjectIds;
 
 export const getUserIds = (async (args, context) => {
   if (!context.user) {
