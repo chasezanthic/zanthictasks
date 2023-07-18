@@ -10,8 +10,11 @@ import { FilterSet } from "../../.wasp/out/server/src/shared/types";
 import { HeaderList } from "./components/Headers/HeaderList";
 import { CompanyData, ProjectData } from "./components/Headers/HeaderList";
 import { TaskData } from "./components/Tasks/TaskItem";
-import { FaPlus, FaFilter, FaChevronRight, FaTimes } from "react-icons/fa";
+import { FaPlus, FaFilter, FaTimes, FaChevronRight } from "react-icons/fa";
 import { Autocomplete, TextField } from "@mui/material";
+import { User } from "@wasp/entities";
+import logout from "@wasp/auth/logout";
+import logo from "./static/zai_logo2023_wht_600px_trans.png";
 
 export type ItemData = CompanyData | ProjectData | TaskData | undefined;
 
@@ -24,7 +27,7 @@ const statuses = [
   { val: 3, label: "Archived" },
 ];
 
-export function MainPage() {
+export function MainPage({ user }: { user: User }) {
   const [filteredCompanies, setFilteredCompanies] = useState<string[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<string[]>([]);
   const [filteredProjects, setfilteredProjects] = useState<string[]>([]);
@@ -32,6 +35,12 @@ export function MainPage() {
   const [itemBeingEdited, setItemBeingEdited] = useState<ItemData>(undefined);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [taskKeyword, setTaskKeyword] = useState<string>();
+
+  React.useEffect(() => {
+    if (document && document !== null) {
+      document.querySelector("html")?.setAttribute("data-theme", "zanthic");
+    }
+  }, []);
 
   const {
     data: fullCompanies,
@@ -114,22 +123,39 @@ export function MainPage() {
         className="transition-all duration-500"
         style={{ width: showFilters ? window.innerWidth - DRAWER_W : "100%" }}
       >
-        <nav className="sticky top-0 w-full z-20 flex py-7 pl-10 pr-7 bg-[#07223D] justify-between">
-          <h1 className="text-center text-white text-3xl">Zanthic Tasks</h1>
-          <div className="flex items-center">
-            <button className="flex items-center text-white gap-2 hover:text-blue-300 pr-5">
+        <nav className="sticky top-0 w-full z-20 flex py-7 pl-10 pr-7 bg-primary justify-between">
+          <img src={logo} className="w-52" />
+          {/* <h1 className="text-center text-secondary text-3xl">Zanthic Tasks</h1> */}
+          <div className="flex items-center gap-5">
+            <button className="flex items-center text-secondary gap-2 hover:text-accent pr-5">
               <FaPlus />
               <span>New Company</span>
             </button>
-            <div className="flex items-center">
-              {!showFilters && (
-                <button
-                  className="border-l-2 pl text-white py-2 pl-5 hover:text-blue-300"
-                  onClick={() => setShowFilters(!showFilters)}
+            <details className="dropdown dropdown-end">
+              <summary className="avatar placeholder cursor-pointer">
+                <div className="bg-neutral text-secondary hover:bg-slate-700 rounded-full w-10 border-[1px]">
+                  <span>{user.username.at(0)}</span>
+                </div>
+              </summary>
+              <ul className="text-neutral p-2 shadow dropdown-content bg-secondary z-[1] rounded-box w-52 mt-2">
+                <li className="border-b-[2px] hover:bg-secondary p-2">
+                  <span>Logged in as {user.username}</span>
+                </li>
+                <li
+                  className="p-2 btn-ghost cursor-pointer rounded-b-md"
+                  onClick={logout}
                 >
-                  <FaFilter />
-                </button>
-              )}
+                  <a>Logout</a>
+                </li>
+              </ul>
+            </details>
+            <div className="flex items-center">
+              <button
+                className="pl text-secondary py-2 pl-5 hover:text-accent"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                {!showFilters ? <FaFilter /> : <FaChevronRight />}
+              </button>
             </div>
           </div>
         </nav>
@@ -152,15 +178,18 @@ export function MainPage() {
           width: showFilters ? DRAWER_W : 0,
         }}
       >
-        <div className="flex items-center h-10 justify-start px-2 bg-[#07223D] py-7">
-          <button className="text-white" onClick={() => setShowFilters(false)}>
+        <div className="flex items-center h-10 justify-start px-2 bg-primary py-7">
+          <button
+            className="text-secondary"
+            onClick={() => setShowFilters(false)}
+          >
             <FaTimes size={20} />
           </button>
-          <p className="text-white text-center pl-4 whitespace-nowrap">
+          <p className="text-secondary text-center pl-4 whitespace-nowrap">
             Manage Filters
           </p>
         </div>
-        <div className="p-3 flex flex-col gap-5 mt-2">
+        <div className="p-3 flex flex-col gap-5">
           {companyIds && (
             <Autocomplete
               multiple

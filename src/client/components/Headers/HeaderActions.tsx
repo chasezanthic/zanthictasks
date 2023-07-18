@@ -16,14 +16,14 @@ export const HeaderActions: React.FC<{
       {!editing && (
         <div className="flex w-full items-center justify-between gap-5">
           <button
-            className={`z-10 ${BTN_IDLE_COLOR} hover:text-green-500 transition-all flex justify-center items-center rounded-full gap-2`}
+            className={`z-10 ${BTN_IDLE_COLOR} hover:text-success transition-all flex justify-center items-center rounded-full gap-2`}
             onClick={(e) => onAdd(e)}
           >
             <FaPlus />
             {` New ${addString}`}
           </button>
           <button
-            className={`z-10 ${BTN_IDLE_COLOR} hover:text-red-500 transition-all flex justify-center items-center rounded-full gap-2`}
+            className={`z-10 ${BTN_IDLE_COLOR} hover:text-error transition-all flex justify-center items-center rounded-full gap-2`}
             onClick={(e) => onDelete(e)}
           >
             <FaTrash color="inherit" />

@@ -8,7 +8,14 @@ app ZanthicTasks {
     userEntity: User,
     methods: {
       usernameAndPassword: {},
+      // email: {
+      //   fromField: {
+      //     name: "Zanthic Automation - Tasks",
+      //     email: "zanthicautomation@gmail.com"
+      //   }
+      // },
     },
+    
     onAuthFailedRedirectTo: "/login",
   },
   db: {
@@ -39,6 +46,11 @@ entity User {=psl
   id          String    @id @default(uuid())
   username    String  @unique
   password    String
+  // email                     String?       @unique
+  // password                  String?
+  // isEmailVerified           Boolean       @default(false)
+  // emailVerificationSentAt   DateTime?
+  // passwordResetSentAt       DateTime?
   isAdmin     Boolean @default(false)
   tasks       TaskAssignment[]
 psl=}
@@ -81,14 +93,11 @@ entity Task {=psl
   createdAt DateTime @default(now())
 psl=}
 
-
 entity TaskAssignment {=psl
   taskId String
   task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
   userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@id([taskId, userId])
 psl=}
 
@@ -209,10 +218,10 @@ action deleteCompany {
   entities: [Company]
 }
 
-action createUser {
-  fn: import {createUser} from "@server/users/actions.js",
-  entities: [User]
-}
+// action createUser {
+//   fn: import {createUser} from "@server/users/actions.js",
+//   entities: [User]
+// }
 
 action updatePassword {
   fn: import {updatePassword} from "@server/users/actions.js",

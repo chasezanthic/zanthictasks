@@ -47,7 +47,10 @@ export const NewTaskModal = ({
 
   return (
     <dialog className="modal" ref={modalRef as any}>
-      <form method="dialog" className="modal-box flex flex-col gap-5">
+      <form
+        method="dialog"
+        className="modal-box bg-secondary flex flex-col gap-5"
+      >
         <h3 className="font-bold text-lg p-1 pt-0">Adding new task</h3>
         <div className="flex flex-col gap-1">
           <input
@@ -102,10 +105,10 @@ export const NewTaskModal = ({
             </Listbox>
           </div>
         </div>
-        <div className="w-full flex justify-end gap-2">
+        <div className="w-full text-neutral flex justify-end gap-2">
           <button
             disabled={!newTask.description}
-            className="btn hover:bg-sky-500 btn-info"
+            className="btn text-neutral btn-info disabled:text-neutral disabled:opacity-50"
             onClick={saveTask}
           >
             Save

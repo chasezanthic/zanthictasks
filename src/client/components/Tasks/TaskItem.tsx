@@ -167,12 +167,12 @@ export const TaskItem: React.FC<{
       className="flex items-center gap-10 justify-between border-b-gray-400 text-md my-1 hover:bg-slate-100 p-3"
     >
       <dialog className="modal" ref={deleteModalRef as any}>
-        <form method="dialog" className="modal-box">
+        <form method="dialog" className="modal-box bg-secondary">
           <h3 className="font-bold text-lg">Deleting Task</h3>
           <p className="py-4">{`Are you sure you want to delete this task?`}</p>
           <div className="w-full flex justify-end gap-2">
             <button
-              className="btn  hover:bg-sky-500 btn-info"
+              className="btn btn-warning"
               onClick={(e) => onDelete(e, true)}
             >
               Yes

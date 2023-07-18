@@ -42,7 +42,7 @@ export const EditableText = ({
 
   const getTextInputProps = (type: "textarea" | "input") => ({
     ref: inputRef as any,
-    className: `z-10  w-[75%] ${type}`,
+    className: `z-10  w-[75%] ${type} text-neutral bg-secondary`,
     autoFocus: true,
     value: text,
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -63,7 +63,7 @@ export const EditableText = ({
           onMouseEnter={() => setHovering(true)}
           onMouseLeave={() => setHovering(false)}
           onClick={onEditPressed}
-          className="hover:border-solid hover:text-blue-500 rounded-md p-2 flex gap-2 text-start items-center"
+          className="text-neutral hover:border-solid hover:text-info rounded-md p-2 flex gap-2 text-start items-center"
         >
           <p className="break-words">{text}</p>
           <FaEdit
@@ -82,13 +82,13 @@ export const EditableText = ({
             <textarea {...getTextInputProps("textarea")} />
           )}
           <button
-            className={`z-10 ${BTN_IDLE_COLOR} hover:text-green-500 transition-all flex justify-center items-center rounded-full gap-2`}
+            className={`z-10 ${BTN_IDLE_COLOR} hover:text-success transition-all flex justify-center items-center rounded-full gap-2`}
             onClick={onSave}
           >
             <FaCheck color="inherit" />
           </button>
           <button
-            className={`z-10 ${BTN_IDLE_COLOR} hover:text-red-500 transition-all flex justify-center items-center rounded-full gap-2`}
+            className={`z-10 ${BTN_IDLE_COLOR} hover:text-error transition-all flex justify-center items-center rounded-full gap-2`}
             onClick={onCancel}
           >
             <FaTimes color="inherit" />

@@ -154,7 +154,7 @@ export const HeaderList = <
           </p>
           <div className="w-full flex justify-end gap-2">
             <button
-              className="btn  hover:bg-sky-500 btn-info"
+              className="btn hover:bg-accent btn-info"
               onClick={(e) => onDelete(e, true)}
             >
               Yes
