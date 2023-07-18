@@ -10,11 +10,20 @@ import { FilterSet } from "../../.wasp/out/server/src/shared/types";
 import { HeaderList } from "./components/Headers/HeaderList";
 import { CompanyData, ProjectData } from "./components/Headers/HeaderList";
 import { TaskData } from "./components/Tasks/TaskItem";
-import { FaPlus, FaFilter, FaTimes, FaChevronRight } from "react-icons/fa";
+import {
+  FaPlus,
+  FaFilter,
+  FaTimes,
+  FaChevronRight,
+  FaUser,
+} from "react-icons/fa";
 import { Autocomplete, TextField } from "@mui/material";
 import { User } from "@wasp/entities";
 import logout from "@wasp/auth/logout";
 import logo from "./static/zai_logo2023_wht_600px_trans.png";
+import { Link } from "react-router-dom";
+import { FormInput, FormLabel } from "@wasp/auth/forms/internal/Form";
+import { ChangePasswordModal } from "./components/Modals/ChangePasswordModal";
 
 export type ItemData = CompanyData | ProjectData | TaskData | undefined;
 
@@ -41,6 +50,8 @@ export function MainPage({ user }: { user: User }) {
       document.querySelector("html")?.setAttribute("data-theme", "zanthic");
     }
   }, []);
+
+  const changePasswordModalRef = React.useRef<HTMLDialogElement>();
 
   const {
     data: fullCompanies,
@@ -124,22 +135,36 @@ export function MainPage({ user }: { user: User }) {
         style={{ width: showFilters ? window.innerWidth - DRAWER_W : "100%" }}
       >
         <nav className="sticky top-0 w-full z-20 flex py-7 pl-10 pr-7 bg-primary justify-between">
+          <dialog className="modal" ref={changePasswordModalRef as any}>
+            <ChangePasswordModal />
+            <form method="dialog" className="modal-backdrop">
+              <button>close</button>
+            </form>
+          </dialog>
           <img src={logo} className="w-52" />
-          {/* <h1 className="text-center text-secondary text-3xl">Zanthic Tasks</h1> */}
-          <div className="flex items-center gap-5">
-            <button className="flex items-center text-secondary gap-2 hover:text-accent pr-5">
-              <FaPlus />
-              <span>New Company</span>
-            </button>
+          <button className="flex items-center text-secondary gap-2 hover:text-accent pr-5">
+            <FaPlus />
+            <span>New Company</span>
+          </button>
+          <div className="flex items-center gap-4">
             <details className="dropdown dropdown-end">
-              <summary className="avatar placeholder cursor-pointer">
-                <div className="bg-neutral text-secondary hover:bg-slate-700 rounded-full w-10 border-[1px]">
-                  <span>{user.username.at(0)}</span>
-                </div>
+              <summary
+                style={{ listStyle: "none" }}
+                className="cursor-pointer text-secondary hover:text-accent p-2"
+              >
+                <FaUser size={20} />
               </summary>
               <ul className="text-neutral p-2 shadow dropdown-content bg-secondary z-[1] rounded-box w-52 mt-2">
                 <li className="border-b-[2px] hover:bg-secondary p-2">
                   <span>Logged in as {user.username}</span>
+                </li>
+                <li
+                  className="rounded-b-md flex"
+                  onClick={() => changePasswordModalRef.current?.showModal()}
+                >
+                  <span className="p-2 btn-ghost cursor-pointer h-full w-[100%]">
+                    Change Password
+                  </span>
                 </li>
                 <li
                   className="p-2 btn-ghost cursor-pointer rounded-b-md"
@@ -154,7 +179,11 @@ export function MainPage({ user }: { user: User }) {
                 className="pl text-secondary py-2 pl-5 hover:text-accent"
                 onClick={() => setShowFilters(!showFilters)}
               >
-                {!showFilters ? <FaFilter /> : <FaChevronRight />}
+                {!showFilters ? (
+                  <FaFilter size={20} />
+                ) : (
+                  <FaChevronRight size={20} />
+                )}
               </button>
             </div>
           </div>

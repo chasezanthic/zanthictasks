@@ -93,6 +93,7 @@ entity Task {=psl
   createdAt DateTime @default(now())
 psl=}
 
+
 entity TaskAssignment {=psl
   taskId String
   task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -102,9 +103,15 @@ entity TaskAssignment {=psl
 psl=}
 
 route RootRoute { path: "/", to: MainPage }
+route ResetPasswordRoute { path: "/reset-password", to: ResetPasswordPage }
 page MainPage {
   authRequired: true,
   component: import { MainPage } from "@client/MainPage.tsx"
+}
+
+page ResetPasswordPage {
+  authRequired: true,
+  component: import ResetPasswordPage from "@client/ResetPasswordPage.tsx",
 }
 
 route LoginRoute { path: "/login", to: LoginPage }
