@@ -22,7 +22,8 @@ app ZanthicTasks {
     seeds: [
       import { seedUsers } from "@server/db/dbSeeds.js",
       import { seedCompanies } from "@server/db/dbSeeds.js",
-    ]
+    ],
+    system: PostgreSQL
   },
 
   dependencies: [
