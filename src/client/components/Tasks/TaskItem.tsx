@@ -4,7 +4,7 @@ import { FaTrash, FaCheck, FaPlus } from "react-icons/fa";
 import { MdArchive, MdUnarchive } from "react-icons/md";
 import { TbZzz, TbZzzOff } from "react-icons/tb";
 import { EditableText } from "../Shared/EditableText";
-import { ItemData } from "../../MainPage";
+import { ItemData, PageAlert } from "../../MainPage";
 import updateTask from "@wasp/actions/updateTask";
 import deleteTask from "@wasp/actions/deleteTask";
 import updateAssignees from "@wasp/actions/updateAssignees";
@@ -22,8 +22,9 @@ export type TaskData = Task & {
 export const TaskItem: React.FC<{
   t: TaskData;
   itemBeingEdited: ItemData;
+  setAlert: (alert: PageAlert) => void;
   setItemBeingEdited: (item: ItemData) => void;
-}> = ({ t, itemBeingEdited, setItemBeingEdited }) => {
+}> = ({ t, itemBeingEdited, setItemBeingEdited, setAlert }) => {
   const [hovering, setHovering] = useState(false);
   const [description, setDescription] = useState(t.description);
   const [assignees, setAssignees] = useState(
@@ -37,12 +38,6 @@ export const TaskItem: React.FC<{
   );
 
   const { data: users } = useQuery(getUserIds);
-
-  const {
-    data: userIds,
-    isFetching: isFetchingUserIds,
-    error: userIdsError,
-  } = useQuery(getUserIds);
 
   const deleteModalRef = useRef<HTMLDialogElement>();
   const assigneeModalRef = useRef<HTMLDialogElement>();
@@ -111,9 +106,6 @@ export const TaskItem: React.FC<{
         .filter((a) => !t.assigned.map((a) => a.userId).includes(a.id))
         .map((a) => a.id);
 
-      console.log(deletedAssignees);
-      console.log(addedAssignees);
-
       await updateAssignees({
         taskId: t.id,
         deletedAssigneeIds: deletedAssignees,
@@ -164,7 +156,7 @@ export const TaskItem: React.FC<{
     <div
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
-      className="flex items-center gap-10 justify-between border-b-gray-400 text-md my-1 hover:bg-slate-100 p-3"
+      className="flex items-center gap-10 justify-between border-b-2 border-r-2 border-l-2 text-md hover:bg-slate-100 p-3"
     >
       <dialog className="modal" ref={deleteModalRef as any}>
         <form method="dialog" className="modal-box bg-secondary">
@@ -185,7 +177,7 @@ export const TaskItem: React.FC<{
         </form>
       </dialog>
       <dialog className="modal" ref={assigneeModalRef as any}>
-        <form method="dialog" className="modal-box">
+        <form method="dialog" className="modal-box bg-secondary">
           <Listbox value={assignees} onChange={setAssignees} multiple>
             <Listbox.Button className="border-gray-400 w-full input mb-5">
               {assignees.length < 1

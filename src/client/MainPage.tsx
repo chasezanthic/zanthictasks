@@ -3,9 +3,8 @@ import "./Main.css";
 import { useQuery } from "@wasp/queries";
 import getFilteredTasks from "@wasp/queries/getFilteredTasks";
 import getCompanyIds from "@wasp/queries/getCompanyIds";
-import getProjectIds from "@wasp/queries/getProjectIds";
 import getUserIds from "@wasp/queries/getUserIds";
-import getAllTasks from "@wasp/queries/getAllTasks";
+import createCompany from "@wasp/actions/createCompany";
 import { FilterSet } from "../../.wasp/out/server/src/shared/types";
 import { HeaderList } from "./components/Headers/HeaderList";
 import { CompanyData, ProjectData } from "./components/Headers/HeaderList";
@@ -17,12 +16,16 @@ import {
   FaChevronRight,
   FaUser,
 } from "react-icons/fa";
-import { Autocomplete, TextField } from "@mui/material";
+import {
+  Autocomplete,
+  TextField,
+  Alert,
+  Snackbar,
+  CircularProgress,
+} from "@mui/material";
 import { User } from "@wasp/entities";
 import logout from "@wasp/auth/logout";
 import logo from "./static/zai_logo2023_wht_600px_trans.png";
-import { Link } from "react-router-dom";
-import { FormInput, FormLabel } from "@wasp/auth/forms/internal/Form";
 import { ChangePasswordModal } from "./components/Modals/ChangePasswordModal";
 
 export type ItemData = CompanyData | ProjectData | TaskData | undefined;
@@ -36,13 +39,32 @@ const statuses = [
   { val: 3, label: "Archived" },
 ];
 
+const emptyFilters = {
+  companyIds: [],
+  userIds: [],
+  status: [],
+};
+
+export interface PageAlert {
+  message: string;
+  severity: "success" | "warning" | "error" | "info";
+}
+
 export function MainPage({ user }: { user: User }) {
-  const [filteredCompanies, setFilteredCompanies] = useState<string[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<string[]>([]);
-  const [filteredProjects, setfilteredProjects] = useState<string[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<
+    { name: string; id: string }[]
+  >([]);
+  const [filteredEmployees, setFilteredEmployees] = useState<
+    { username: string; id: string }[]
+  >([]);
   const [filteredStatuses, setFilteredStatuses] = useState<number[]>([]);
   const [itemBeingEdited, setItemBeingEdited] = useState<ItemData>(undefined);
+  const [appliedFilters, setAppliedFilters] = useState<FilterSet>(emptyFilters);
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [newCompany, setNewCompany] = useState<CompanyData | undefined>(
+    undefined
+  );
+  const [alert, setAlert] = useState<PageAlert>();
   const [taskKeyword, setTaskKeyword] = useState<string>();
 
   React.useEffect(() => {
@@ -51,13 +73,13 @@ export function MainPage({ user }: { user: User }) {
     }
   }, []);
 
-  const changePasswordModalRef = React.useRef<HTMLDialogElement>();
+  React.useEffect(() => {
+    if (!itemBeingEdited) {
+      setNewCompany(undefined);
+    }
+  }, [itemBeingEdited]);
 
-  const {
-    data: fullCompanies,
-    isFetching: isFetchingTasks,
-    error: tasksError,
-  } = useQuery(getAllTasks);
+  const changePasswordModalRef = React.useRef<HTMLDialogElement>();
 
   const {
     data: companyIds,
@@ -66,44 +88,31 @@ export function MainPage({ user }: { user: User }) {
   } = useQuery(getCompanyIds);
 
   const {
-    data: projectIds,
-    isFetching: isFetchingProjectIds,
-    error: projectIdsError,
-  } = useQuery(getProjectIds);
-
-  const {
     data: userIds,
     isFetching: isFetchingUserIds,
     error: userIdsError,
   } = useQuery(getUserIds);
 
-  const getFilters = () => {
-    if (companyIds && userIds) {
-      const filters: FilterSet = {
-        companyIds:
-          filteredCompanies.length > 0
-            ? filteredCompanies
-            : companyIds?.map((c) => c.id),
-        userIds:
-          filteredEmployees.length > 0
-            ? filteredEmployees
-            : userIds?.map((c) => c.id),
-        status:
-          filteredStatuses.length > 0
-            ? filteredStatuses
-            : statuses?.map((c) => c.val),
-      };
-      return filters;
-    }
-
-    return undefined;
-  };
-
   const {
     data: filteredCompanyData,
     isFetching: isFetchingFilteredTasks,
     error: filterdTasksError,
-  } = useQuery(getFilteredTasks, getFilters(), { enabled: !!getFilters() });
+  } = useQuery(getFilteredTasks, appliedFilters);
+
+  const applyFilters = () => {
+    setAppliedFilters({
+      companyIds: filteredCompanies.map((c) => c.id),
+      userIds: filteredEmployees.map((e) => e.id),
+      status: filteredStatuses,
+    });
+  };
+
+  const clearFilters = () => {
+    setFilteredCompanies([]);
+    setFilteredEmployees([]);
+    setFilteredStatuses([]);
+    setAppliedFilters(emptyFilters);
+  };
 
   function toggleValue<TVal>(
     val: TVal,
@@ -117,44 +126,90 @@ export function MainPage({ user }: { user: User }) {
     }
   }
 
-  console.log(getFilters());
-  console.log(filteredCompanyData);
+  const onAdd = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
 
-  if (fullCompanies && filteredCompanyData) {
-    const interesection = fullCompanies
-      .map((c) => c.name)
-      .filter((el) => !filteredCompanyData.map((c) => c.name).includes(el));
+    let _newCompany = {
+      id: "new",
+      name: `New Company`,
+      createdAt: new Date(),
+      projects: [],
+    };
 
-    console.log(interesection);
-  }
+    setNewCompany(_newCompany);
+    setItemBeingEdited(_newCompany);
+  };
+
+  const onSave = async (
+    e?: React.MouseEvent<HTMLButtonElement>,
+    childName?: string
+  ) => {
+    if (e) e.stopPropagation();
+    if (childName) {
+      await createCompany({ name: childName });
+    }
+
+    setItemBeingEdited(undefined);
+    setAlert({
+      severity: "success",
+      message: `Added new company: ${childName}`,
+    });
+    setNewCompany(undefined);
+  };
+
+  const onCancel = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    if (e) e.stopPropagation();
+    setItemBeingEdited(undefined);
+    setNewCompany(undefined);
+  };
 
   return (
     <main>
+      <Snackbar
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        open={!!alert}
+        autoHideDuration={5000}
+        onClose={() => setAlert(undefined)}
+      >
+        <Alert
+          severity={alert?.severity}
+          className="cursor-pointer"
+          onClick={() => setAlert(undefined)}
+        >
+          <div className="flex items-center gap-3">
+            {alert?.message}
+            <FaTimes />
+          </div>
+        </Alert>
+      </Snackbar>
       <div
         className="transition-all duration-500"
         style={{ width: showFilters ? window.innerWidth - DRAWER_W : "100%" }}
       >
-        <nav className="sticky top-0 w-full z-20 flex py-7 pl-10 pr-7 bg-primary justify-between">
+        <nav className="sticky top-0 w-full items-center z-20 flex py-4 pl-10 pr-7 bg-primary justify-between">
           <dialog className="modal" ref={changePasswordModalRef as any}>
             <ChangePasswordModal />
             <form method="dialog" className="modal-backdrop">
               <button>close</button>
             </form>
           </dialog>
-          <img src={logo} className="w-52" />
-          <button className="flex items-center text-secondary gap-2 hover:text-accent pr-5">
-            <FaPlus />
-            <span>New Company</span>
-          </button>
-          <div className="flex items-center gap-4">
-            <details className="dropdown dropdown-end">
-              <summary
+          <img src={logo} className="w-72" />
+          <div className="text-3xl text-secondary items-center">
+            Project Manager
+          </div>
+          <div className="flex items-center gap-5">
+            <div className="dropdown dropdown-hover px-5">
+              <label
+                tabIndex={0}
                 style={{ listStyle: "none" }}
-                className="cursor-pointer text-secondary hover:text-accent p-2"
+                className="text-secondary p-2"
               >
                 <FaUser size={20} />
-              </summary>
-              <ul className="text-neutral p-2 shadow dropdown-content bg-secondary z-[1] rounded-box w-52 mt-2">
+              </label>
+              <ul
+                tabIndex={0}
+                className="text-neutral p-2 shadow dropdown-content bg-secondary z-[10] rounded-box w-52"
+              >
                 <li className="border-b-[2px] hover:bg-secondary p-2">
                   <span>Logged in as {user.username}</span>
                 </li>
@@ -173,7 +228,14 @@ export function MainPage({ user }: { user: User }) {
                   <a>Logout</a>
                 </li>
               </ul>
-            </details>
+            </div>
+            <button
+              onClick={onAdd}
+              className="flex items-center text-secondary gap-2 hover:text-accent"
+            >
+              <FaPlus />
+              <span>New Company</span>
+            </button>
             <div className="flex items-center">
               <button
                 className="pl text-secondary py-2 pl-5 hover:text-accent"
@@ -188,9 +250,28 @@ export function MainPage({ user }: { user: User }) {
             </div>
           </div>
         </nav>
-        <div className="container mx-auto border-t-2">
+        <div className="container mx-auto border-t-2 py-5">
+          {isFetchingFilteredTasks ||
+            isFetchingCompanyIds ||
+            (isFetchingUserIds && (
+              <div className="flex justify-center">
+                <CircularProgress />
+              </div>
+            ))}
+          {newCompany && (
+            <HeaderList<CompanyData, TaskData>
+              data={newCompany as CompanyData}
+              setAlert={setAlert}
+              parentOnSave={onSave}
+              parentOnCancel={onCancel}
+              headerType="company"
+              itemBeingEdited={itemBeingEdited}
+              setItemBeingEdited={setItemBeingEdited}
+            />
+          )}
           {filteredCompanyData?.map((c) => (
             <HeaderList<CompanyData, ProjectData>
+              setAlert={setAlert}
               key={c.id}
               headerType="company"
               children={c.projects}
@@ -222,9 +303,8 @@ export function MainPage({ user }: { user: User }) {
           {companyIds && (
             <Autocomplete
               multiple
-              onChange={(_, newVal) =>
-                setFilteredCompanies(newVal.map((c) => c.id))
-              }
+              onChange={(_, newVal) => setFilteredCompanies(newVal)}
+              value={filteredCompanies}
               options={companyIds}
               disableCloseOnSelect
               getOptionLabel={(c) => c.name}
@@ -233,7 +313,7 @@ export function MainPage({ user }: { user: User }) {
                   <input
                     type="checkbox"
                     checked={selected}
-                    className="checkbox"
+                    className="checkbox checkbox-info"
                   />
                   {option.name}
                 </li>
@@ -271,9 +351,8 @@ export function MainPage({ user }: { user: User }) {
             <Autocomplete
               multiple
               options={userIds}
-              onChange={(_, newVal) =>
-                setFilteredEmployees(newVal.map((p) => p.id))
-              }
+              onChange={(_, newVal) => setFilteredEmployees(newVal)}
+              value={filteredEmployees}
               disableCloseOnSelect
               getOptionLabel={(u) => u.username}
               renderOption={(props, option, { selected }) => (
@@ -281,7 +360,7 @@ export function MainPage({ user }: { user: User }) {
                   <input
                     type="checkbox"
                     checked={selected}
-                    className="checkbox"
+                    className="checkbox checkbox-info"
                   />
                   {option.username}
                 </li>
@@ -291,9 +370,9 @@ export function MainPage({ user }: { user: User }) {
               )}
             />
           )}
-          <div className="flex flex-col p-2 border-2 gap-2">
+          <div className="flex flex-col p-2 border-2 gap-2 text-neutral">
             {statuses.map((s) => (
-              <div className="flex gap-2">
+              <div key={s.val} className="flex gap-2">
                 <input
                   onChange={() =>
                     toggleValue<number>(
@@ -304,7 +383,7 @@ export function MainPage({ user }: { user: User }) {
                   }
                   type="checkbox"
                   checked={filteredStatuses.includes(s.val)}
-                  className="checkbox"
+                  className="checkbox checkbox-info"
                 />
                 {s.label}
               </div>
@@ -318,6 +397,20 @@ export function MainPage({ user }: { user: User }) {
             placeholder="Task keywords"
           /> */}
           {/* <button className="btn">Clear</button> */}
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={applyFilters}
+              className="btn btn-primary text-secondary"
+            >
+              Apply
+            </button>
+            <button
+              onClick={clearFilters}
+              className="btn btn-ghost text-neutral"
+            >
+              Clear
+            </button>
+          </div>
         </div>
       </div>
     </main>

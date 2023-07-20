@@ -119,11 +119,6 @@ page LoginPage {
   component: import { LoginPage } from "@client/LoginPage.tsx"
 }
 
-query getAllTasks {
-  fn: import {getAllTasks} from "@server/queries.js",
-  entities: [Company, Project, Task]
-}
-
 query getCompanyIds {
   fn: import { getCompanyIds } from "@server/queries.js",
   entities: [Company]

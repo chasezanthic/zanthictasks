@@ -15,12 +15,7 @@ function ResetPasswordPage() {
       <img src={logo} />
       <div className="bg-secondary h-[2px] w-full"></div>
       <h1 className="text-secondary text-4xl ">Reset Password</h1>
-      <div className="text-neutral card bg-secondary p-10">
-        <Form>
-          <FormLabel>New Password</FormLabel>
-          <FormInput />
-        </Form>
-      </div>
+      <div className="text-neutral card bg-secondary p-10"></div>
     </main>
   );
 }

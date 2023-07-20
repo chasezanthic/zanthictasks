@@ -12,7 +12,7 @@ export function LoginPage() {
 
   return (
     <main className="bg-primary w-full h-full flex flex-col justify-start items-center gap-8 pt-8">
-      <img src={logo} />
+      <img src={logo} className="w-80" />
       <div className="bg-secondary h-[2px] w-full"></div>
       <h1 className="text-secondary text-4xl ">Project Manager</h1>
       <div className="text-neutral card bg-secondary p-10">

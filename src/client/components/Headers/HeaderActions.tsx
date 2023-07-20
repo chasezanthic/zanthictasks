@@ -1,5 +1,5 @@
 import React from "react";
-import { FaEdit, FaTrash, FaCheck, FaTimes, FaPlus } from "react-icons/fa";
+import { FaTrash, FaPlus } from "react-icons/fa";
 
 const BTN_IDLE_COLOR = "text-slate-400";
 

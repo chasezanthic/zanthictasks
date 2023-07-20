@@ -19,8 +19,6 @@ export const createProject: CreateProject<CreateProjectArgs, Project> = (
     throw new HttpError(401);
   }
 
-  console.log(args);
-
   return context.entities.Project.create({
     data: {
       name: args.name,

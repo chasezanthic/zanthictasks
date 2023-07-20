@@ -1,16 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Company, Project, Task, TaskAssignment } from "@wasp/entities";
+import { Company, Project, Task } from "@wasp/entities";
 import updateCompany from "@wasp/actions/updateCompany";
 import createTask from "@wasp/actions/createTask";
+import createProject from "@wasp/actions/createProject";
 import updateProject from "@wasp/actions/updateProject";
 import deleteCompany from "@wasp/actions/deleteCompany";
 import deleteProject from "@wasp/actions/deleteProject";
-import { FaEdit } from "react-icons/fa";
 import { HeaderActions } from "./HeaderActions";
 import { TaskData, TaskItem } from "../Tasks/TaskItem";
 import { EditableText } from "../Shared/EditableText";
-import { ItemData } from "../../MainPage";
-import { Listbox } from "@headlessui/react";
+import { ItemData, PageAlert } from "../../MainPage";
 import { NewTaskModal } from "../Modals/NewTaskModal";
 
 export type CompanyData = Company & {
@@ -26,6 +25,12 @@ interface HeaderListProps<
   TChild extends ProjectData | TaskData
 > {
   data: T;
+  parentOnSave?: (
+    e?: React.MouseEvent<HTMLButtonElement>,
+    childName?: string
+  ) => void;
+  parentOnCancel?: () => void;
+  setAlert: (alert: PageAlert) => void;
   children?: TChild[];
   itemBeingEdited?: ItemData;
   setItemBeingEdited: (state?: ItemData) => void;
@@ -37,29 +42,27 @@ export const HeaderList = <
   TChild extends ProjectData | TaskData
 >({
   data,
+  setAlert,
   itemBeingEdited,
   setItemBeingEdited,
   headerType,
   children,
+  parentOnCancel,
+  parentOnSave,
 }: HeaderListProps<T, TChild>) => {
   const [name, setName] = useState<string | undefined>(data?.name);
   const [hovering, setHovering] = useState(false);
   const [newHeader, setNewHeader] = useState<T | undefined>(undefined);
-  const [newTask, setNewTask] = useState<Task | undefined>(undefined);
-
-  const itemEditedIdRef = useRef<string | undefined>();
 
   const deleteModalRef = useRef<HTMLDialogElement>();
   const collapseRef = useRef<HTMLInputElement>();
+  const contentRef = useRef<HTMLDivElement>();
   const newTaskModalRef = useRef<HTMLDialogElement>();
 
   useEffect(() => {
-    if (itemBeingEdited == undefined && itemEditedIdRef.current == "new") {
+    if (!itemBeingEdited) {
       setNewHeader(undefined);
-      setNewTask(undefined);
     }
-
-    itemEditedIdRef.current = itemBeingEdited?.id;
   }, [itemBeingEdited]);
 
   const onEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -67,17 +70,23 @@ export const HeaderList = <
     setItemBeingEdited(data);
   };
 
-  const onSave = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+  const onSave = async (
+    e?: React.MouseEvent<HTMLButtonElement>,
+    childName?: string
+  ) => {
     if (e) e.stopPropagation();
-    console.log("saving");
-    if (name && name !== data?.name) {
-      let updatedHeader = { ...data, name: name };
-      if (headerType == "company") {
-        await updateCompany(updatedHeader);
-      } else {
+    if (name && (name !== data?.name || childName)) {
+      let updatedHeader = { ...itemBeingEdited, name: childName ?? name };
+      if (headerType == "company" && childName) {
+        await createProject(updatedHeader as Project);
+        setNewHeader(undefined);
+      } else if (headerType == "company") {
+        await updateCompany(updatedHeader as Company);
+      } else if (headerType == "project") {
         await updateProject(updatedHeader as Project);
       }
     }
+
     setItemBeingEdited(undefined);
   };
 
@@ -103,16 +112,8 @@ export const HeaderList = <
     if (data && collapseRef.current) {
       collapseRef.current.checked = true;
 
-      console.log(newTask);
-      console.log(newTaskModalRef.current);
-
-      if (headerType == "project") {
-        if (!newTask && newTaskModalRef.current) {
-          console.log("opening modal");
-          newTaskModalRef.current.showModal();
-        } else if (newTask) {
-          await createTask(newTask);
-        }
+      if (headerType == "project" && newTaskModalRef.current) {
+        newTaskModalRef.current.showModal();
       } else {
         let newProject: ProjectData = {
           id: "new",
@@ -132,19 +133,32 @@ export const HeaderList = <
   const onCancel = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.stopPropagation();
     setItemBeingEdited(undefined);
+    setNewHeader(undefined);
   };
 
   const toggleCollapse = () => {
     if (collapseRef.current) {
       setItemBeingEdited(undefined);
       collapseRef.current.checked = !collapseRef.current.checked;
+
+      if (collapseRef.current.checked && contentRef.current) {
+        // determine the position of the element in the viewport
+        const rect = contentRef.current.getBoundingClientRect();
+
+        const isOutOfViewport = rect.bottom > window.innerHeight;
+
+        // if the element is not visible in the viewport, scroll to it
+        if (isOutOfViewport) {
+          contentRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }
     }
   };
 
   return (
     <div className="flex" key={data.id}>
       <dialog className="modal" ref={deleteModalRef as any}>
-        <form method="dialog" className="modal-box">
+        <form method="dialog" className="modal-box bg-secondary">
           <h3 className="font-bold text-lg">Deleting {data?.name}</h3>
           <p className="py-4">
             {`This company has multiple ${
@@ -172,7 +186,7 @@ export const HeaderList = <
       <div className="collapse transition-all rounded-none">
         <input type="checkbox" ref={collapseRef as any} />
         <div
-          className="pr-14 flex items-center justify-between gap-2 border-b-2 rounded-none collapse-title mx-0 text-xl font-medium hover:bg-slate-100 z-10"
+          className="border-r-2 border-l-2 mr-14 flex items-center justify-between gap-2 border-b-[1px] border-t-[1px] rounded-none collapse-title mx-0 text-xl font-medium hover:bg-slate-100 z-10"
           onMouseEnter={() => setHovering(true)}
           onMouseLeave={() => setHovering(false)}
           onClick={toggleCollapse}
@@ -181,8 +195,8 @@ export const HeaderList = <
             parentDataType="header"
             editing={itemBeingEdited == data}
             onEdit={onEdit}
-            onSave={onSave}
-            onCancel={onCancel}
+            onSave={parentOnSave ? (e) => parentOnSave(e, name) : onSave}
+            onCancel={parentOnCancel ?? onCancel}
             setText={setName}
             text={data.name == "noproj" ? "Misc" : name}
           />
@@ -191,16 +205,19 @@ export const HeaderList = <
               addString={headerType == "company" ? "Project" : "Task"}
               onAdd={(e) => onAdd(e)}
               onDelete={(e) => onDelete(e)}
-              onSave={onSave}
-              onCancel={(e) => onCancel(e)}
+              onSave={parentOnSave ? (e) => parentOnSave(e, name) : onSave}
+              onCancel={parentOnCancel ?? onCancel}
               editing={itemBeingEdited == data}
             />
           )}
         </div>
-        <div className="collapse-content !pl-10 !pr-0">
+        <div ref={contentRef as any} className="collapse-content !pl-10 !pr-0">
           {newHeader && headerType == "company" && (
             <HeaderList<ProjectData, TaskData>
+              setAlert={setAlert}
               data={newHeader as ProjectData}
+              parentOnSave={onSave}
+              parentOnCancel={onCancel}
               headerType="project"
               itemBeingEdited={itemBeingEdited}
               setItemBeingEdited={setItemBeingEdited}
@@ -208,28 +225,46 @@ export const HeaderList = <
           )}
           {headerType == "company" ? (
             <>
-              {children
-                ?.sort(
-                  (a: TChild, b: TChild) =>
-                    b.createdAt.getTime() - a.createdAt.getTime()
-                )
-                .map((c) => (
-                  <HeaderList<ProjectData, TaskData>
-                    key={c.id}
-                    children={(c as ProjectData).tasks}
-                    data={c as ProjectData}
-                    headerType="project"
-                    itemBeingEdited={itemBeingEdited}
-                    setItemBeingEdited={setItemBeingEdited}
-                  />
-                ))}
+              {children?.length && children?.length > 0 ? (
+                <>
+                  {children
+                    ?.sort(
+                      (a: TChild, b: TChild) =>
+                        b.createdAt.getTime() - a.createdAt.getTime()
+                    )
+                    .map((c) => (
+                      <HeaderList<ProjectData, TaskData>
+                        key={c.id}
+                        setAlert={setAlert}
+                        children={(c as ProjectData).tasks}
+                        data={c as ProjectData}
+                        headerType="project"
+                        itemBeingEdited={itemBeingEdited}
+                        setItemBeingEdited={setItemBeingEdited}
+                      />
+                    ))}
+                </>
+              ) : (
+                <div className="border-2 border-t-[1px] p-5">
+                  <span className="text-lg text-neutral opacity-60">
+                    No projects for this company yet
+                  </span>
+                </div>
+              )}
             </>
+          ) : (data as ProjectData).tasks?.length == 0 ? (
+            <div className="border-2 border-t-[1px] p-5">
+              <span className="text-lg text-neutral opacity-60">
+                No tasks for this project yet
+              </span>
+            </div>
           ) : (
             <>
               {(data as ProjectData).tasks?.map((t) => (
                 <TaskItem
                   t={t}
                   key={t.id}
+                  setAlert={setAlert}
                   itemBeingEdited={itemBeingEdited}
                   setItemBeingEdited={setItemBeingEdited}
                 />
