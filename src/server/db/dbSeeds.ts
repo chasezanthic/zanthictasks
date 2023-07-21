@@ -2,6 +2,7 @@ import type { DbSeedFn } from "@wasp/dbSeed/types.js";
 import { group } from "console";
 
 const users = [
+  { username: "zanthic", password: "zanthic1", isAdmin: true },
   { username: "Darren", password: "zanthic1", isAdmin: true },
   { username: "Chris", password: "zanthic1", isAdmin: false },
   { username: "Kole", password: "zanthic1", isAdmin: false },
@@ -634,7 +635,7 @@ const companies: CompanyData[] = [
   },
 ];
 
-export const seedUsers: DbSeedFn = async (prismaClient) => {
+const seedUsers = async (prismaClient) => {
   // TODO: open issue about whether the seed data can be placed elsewhere (e.g. local static file)
   users.forEach(async (user) => {
     await prismaClient.user.create({
@@ -647,7 +648,7 @@ export const seedUsers: DbSeedFn = async (prismaClient) => {
   });
 };
 
-export const seedCompanies: DbSeedFn = async (prismaClient) => {
+const seedCompanies = async (prismaClient) => {
   for (const company of companies) {
     const _company = await prismaClient.company.create({
       data: { name: company.companyName },
@@ -714,4 +715,32 @@ export const seedCompanies: DbSeedFn = async (prismaClient) => {
       }
     }
   }
+};
+
+async function isSeeded(prismaClient) {
+  const result =
+    await prismaClient.$queryRaw`SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public';`;
+
+  const tablesExist = result[0].count > 0;
+
+  let company = undefined;
+
+  if (tablesExist) {
+    company = await prismaClient.company.findFirst();
+  }
+
+  const isSeeded = tablesExist && !!company;
+
+  return isSeeded;
+}
+
+export const seedAll: DbSeedFn = async (prismaClient) => {
+  const seeded = await isSeeded(prismaClient);
+  if (!seeded) {
+    console.log("seeding");
+    await seedUsers(prismaClient);
+    await seedCompanies(prismaClient);
+  }
+
+  console.log("already seeded");
 };

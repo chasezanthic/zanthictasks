@@ -5,7 +5,7 @@ import getFilteredTasks from "@wasp/queries/getFilteredTasks";
 import getCompanyIds from "@wasp/queries/getCompanyIds";
 import getUserIds from "@wasp/queries/getUserIds";
 import createCompany from "@wasp/actions/createCompany";
-import { FilterSet } from "../../.wasp/out/server/src/shared/types";
+import { FilterSet } from "./types";
 import { HeaderList } from "./components/Headers/HeaderList";
 import { CompanyData, ProjectData } from "./components/Headers/HeaderList";
 import { TaskData } from "./components/Tasks/TaskItem";
@@ -186,7 +186,7 @@ export function MainPage({ user }: { user: User }) {
         className="transition-all duration-500"
         style={{ width: showFilters ? window.innerWidth - DRAWER_W : "100%" }}
       >
-        <nav className="sticky top-0 w-full items-center z-20 flex py-4 pl-10 pr-7 bg-primary justify-between">
+        <nav className="sticky top-0 w-full items-center z-50 flex py-4 pl-10 pr-7 bg-primary justify-between">
           <dialog className="modal" ref={changePasswordModalRef as any}>
             <ChangePasswordModal />
             <form method="dialog" className="modal-backdrop">
